@@ -15,12 +15,13 @@
                        :answer "Mars"}]))
 
 (defnc card-item [{:keys [question options answer flipped set-flipped]}]
-  (d/div {:style {:background-color "#fffbea"
-                  :width "400px"
+  (d/div {:style {:background-color "#ffecba"
                   :padding "20px"
+                  :border-radius "10px"
+                  :box-shadow "0 12px 12px rgba(0,0,0,0.1)"
+                  :width "400px"
                   :text-align "center"
-                  :cursor "pointer"
-                  :font-family "Poppins, sans-serif"}
+                  :cursor "pointer"}
           :on-click (flip-card set-flipped)}
          (if flipped
            ;; Show the answer side
@@ -35,33 +36,49 @@
                ^{:key option}
                (d/div {:style {:color "black"}} option)))))))
 
+(defn card-navigation [direction set-state]
+  (fn []
+    (set-state (fn [state]
+                 (let [total-questions (count @questions)
+                       current-index (:current-question-index state)
+                       new-index (mod (+ current-index direction) total-questions)]
+                   (assoc state
+                          :current-question-index new-index
+                          :flipped false))))))
+
 (defnc card-display []
   (let [[state set-state] (hooks/use-state {:current-question-index 0
                                             :flipped false})
         current-question (get @questions (:current-question-index state))
         flipped (:flipped state)]
 
-
     (defn flip-card []
       (fn []
         (set-state update :flipped not)))
 
-    (d/div
-     (d/h1 {:style {:text-align "center"}} "Flashrepz 🔥")
-     (d/p {:style {:text-align "center"}} "(click to flip)")
-     (d/div {:style {:display "flex"
-                     :align-items "center"
-                     :justify-content "center"
-                     :color "yellow"}}
-            ($ card-item {:question (:question current-question)
-                          :options (:options current-question)
-                          :answer (:answer current-question)
-                          :flipped flipped
-                          :set-flipped flip-card})))))
+    (d/div {:style {:display "flex"
+                    :align-items "center"
+                    :justify-content "center"
+                    :flex-direction "column"
+                    :font-family "Poppins, sans-serif"}}
+           (d/h1 {:style {:text-align "center"}} "Flashrepz 🔥")
+           (d/p {:style {:text-align "center"}} "(click card to flip)")
+           (d/div {:style {:color "yellow"}}
+                  ($ card-item {:question (:question current-question)
+                                :options (:options current-question)
+                                :answer (:answer current-question)
+                                :flipped flipped
+                                :set-flipped flip-card}))
+           (d/div {:style {:margin-top "10px"}}
+                  (d/button {:on-click (card-navigation 1 set-state)
+                             :style {:background-color "#edad00"
+                                     :color "black"
+                                     :border "none"
+                                     :padding "10px"
+                                     :cursor "pointer"}} "Next")))))
 
 (defnc app []
   ($ card-display))
-
 
 (defn ^:export init []
   (let [root (rdom/createRoot (js/document.getElementById "app"))]
